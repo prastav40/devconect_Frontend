@@ -3,10 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import { createBrowserRouter, RouterProvider } from "react-router";
-import Body from './Body';
-import About from './About';
-import Login from './Login';
-import Error from './Error';
+import Body from './components/Body';
+import About from './components/About';
+import Login from './components/Login';
+import Error from './components/Error';
 
 
 const approuter = createBrowserRouter([

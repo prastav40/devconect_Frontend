@@ -56,7 +56,6 @@ const Login: React.FC = () => {
                 .map(skill => skill.trim())
                 .filter(skill => skill.length > 0);
             const uniqueSkills = [...new Set(skillsArray)];
-
             if (uniqueSkills.length > 10) {
                 alert("You can only add up to 10 skills.");
                 return;
@@ -70,9 +69,11 @@ const Login: React.FC = () => {
                 lastName,
                 age: parsedAge,
                 gender,
-                ...(photoUrl && { photoUrl }), // Only include if user typed something
+                ...(photoUrl && { photoUrl }), 
                 skills: uniqueSkills
             };
+            
+
 
             console.log("Signup Payload:", signupPayload);
         } else {
