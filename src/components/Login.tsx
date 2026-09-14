@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Calendar, Users, Image, Code, ChevronDown } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Calendar, Users, Code, ChevronDown, AlertCircle, UploadCloud, X } from 'lucide-react';
+import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router';
+import { addUser } from '../utils/userslice';
 
 const Login: React.FC = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [showPassword, setShowPassword] = useState<boolean>(false);
+
+    // State to catch and display backend errors (e.g., Wrong password)
+    const [apiError, setApiError] = useState<string>('');
 
     // Core Form states
     const [email, setEmail] = useState<string>('');
@@ -14,7 +24,7 @@ const Login: React.FC = () => {
     const [lastName, setLastName] = useState<string>('');
     const [age, setAge] = useState<string>('');
     const [gender, setGender] = useState<string>('');
-    const [photoUrl, setPhotoUrl] = useState<string>('');
+    const [photo, setPhoto] = useState<File | null>(null);
     const [skillsString, setSkillsString] = useState<string>('');
     const [isGenderOpen, setIsGenderOpen] = useState<boolean>(false);
 
@@ -30,60 +40,91 @@ const Login: React.FC = () => {
     // Real-time validation checks
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    const handleSubmit = (e:React.SyntheticEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setApiError(''); // Clear any previous errors on new submission
 
         if (!isEmailValid) {
             alert("Please enter a valid email address.");
             return;
         }
 
-        if (!isLogin) {
-            if (!isPasswordValid) {
-                alert("Please complete all password requirements.");
-                return;
+        try {
+            if (!isLogin) {
+                if (!isPasswordValid) {
+                    alert("Please complete all password requirements.");
+                    return;
+                }
+
+                const parsedAge = parseInt(age);
+                if (isNaN(parsedAge) || parsedAge < 18 || parsedAge > 65) {
+                    alert("Age must be between 18 and 65.");
+                    return;
+                }
+
+                // Process skills into unique array with max 10 limit
+                const skillsArray = skillsString
+                    .split(',')
+                    .map(skill => skill.trim())
+                    .filter(skill => skill.length > 0);
+                const uniqueSkills = [...new Set(skillsArray)];
+                if (uniqueSkills.length > 10) {
+                    alert("You can only add up to 10 skills.");
+                    return;
+                }
+
+                // Build FormData for file upload
+                const formData = new FormData();
+                formData.append("email", email);
+                formData.append("password", password);
+                formData.append("firstName", firstName);
+                formData.append("lastName", lastName);
+                formData.append("age", parsedAge.toString());
+                formData.append("gender", gender);
+                formData.append("skills", JSON.stringify(uniqueSkills));
+
+                if (photo) {
+                    formData.append("photo", photo);
+                }
+
+                // 1. Make the Signup API Call with FormData headers
+                const response = await axios.post(
+                    "http://localhost:3000/signup",
+                    formData,
+                    {
+                        withCredentials: true,
+                        headers: { "Content-Type": "multipart/form-data" }
+                    }
+                );
+
+                // 2. Dispatch user data to Redux
+                dispatch(addUser(response.data));
+
+                // 3. Redirect to main app
+                navigate("/");
+
+            } else {
+                // 1. Make the Login API Call
+                const response = await axios.post(
+                    "http://localhost:3000/login",
+                    { email, password },
+                    { withCredentials: true }
+                );
+                // 2. Dispatch user data to Redux
+                dispatch(addUser(response?.data));
+
+                // 3. Redirect to main app
+                navigate("/");
             }
-
-            const parsedAge = parseInt(age);
-            if (isNaN(parsedAge) || parsedAge < 18 || parsedAge > 65) {
-                alert("Age must be between 18 and 65.");
-                return;
-            }
-
-            // Process skills into unique array with max 10 limit
-            const skillsArray = skillsString
-                .split(',')
-                .map(skill => skill.trim())
-                .filter(skill => skill.length > 0);
-            const uniqueSkills = [...new Set(skillsArray)];
-            if (uniqueSkills.length > 10) {
-                alert("You can only add up to 10 skills.");
-                return;
-            }
-
-            // Final Signup Payload matching your Schema
-            const signupPayload = {
-                email,
-                password,
-                firstName,
-                lastName,
-                age: parsedAge,
-                gender,
-                ...(photoUrl && { photoUrl }), 
-                skills: uniqueSkills
-            };
-            
-
-
-            console.log("Signup Payload:", signupPayload);
-        } else {
-            console.log("Login Payload:", { email, password });
+        } catch (error: any) {
+            // Safely catch backend error messages (e.g., 401 Unauthorized, 400 Bad Request)
+            const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+            setApiError(errorMessage);
         }
     };
 
     return (
         <div className="w-full min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950">
-            {/* Expanded max-width for signup to accommodate two columns */}
             <div className={`w-full space-y-8 bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden transition-all duration-300 ${isLogin ? 'max-w-md' : 'max-w-2xl'}`}>
 
                 {/* Decorative background glow */}
@@ -107,8 +148,16 @@ const Login: React.FC = () => {
                     </p>
                 </div>
 
+                {/* API Error Banner */}
+                {apiError && (
+                    <div className="relative z-10 bg-rose-500/10 border border-rose-500/50 rounded-xl p-4 flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-rose-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-rose-200">{apiError}</p>
+                    </div>
+                )}
+
                 {/* Form */}
-                <form className="mt-8 space-y-5 relative z-10" onSubmit={handleSubmit}>
+                <form className="mt-4 space-y-5 relative z-10" onSubmit={handleSubmit}>
 
                     {/* Sign Up Specific Fields */}
                     {!isLogin && (
@@ -172,7 +221,6 @@ const Login: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Gender *</label>
                                     <div className="relative group">
-
                                         {/* Invisible backdrop to close dropdown when clicking outside */}
                                         {isGenderOpen && (
                                             <div
@@ -186,8 +234,8 @@ const Login: React.FC = () => {
                                             type="button"
                                             onClick={() => setIsGenderOpen(!isGenderOpen)}
                                             className={`relative flex items-center w-full pl-10 pr-10 py-2.5 border rounded-xl bg-slate-950/50 text-left focus:outline-none transition-all sm:text-sm cursor-pointer z-50 ${isGenderOpen
-                                                    ? "border-indigo-500 ring-2 ring-indigo-500/50"
-                                                    : "border-slate-700 hover:border-slate-600"
+                                                ? "border-indigo-500 ring-2 ring-indigo-500/50"
+                                                : "border-slate-700 hover:border-slate-600"
                                                 }`}
                                         >
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -214,8 +262,8 @@ const Login: React.FC = () => {
                                                             setIsGenderOpen(false);
                                                         }}
                                                         className={`px-10 py-2.5 cursor-pointer transition-colors text-sm capitalize ${gender === option
-                                                                ? 'bg-indigo-500/20 text-indigo-300 font-medium' // Active selected state
-                                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white' // Hover state
+                                                            ? 'bg-indigo-500/20 text-indigo-300 font-medium'
+                                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                                             }`}
                                                     >
                                                         {option}
@@ -223,7 +271,6 @@ const Login: React.FC = () => {
                                                 ))}
                                             </div>
                                         )}
-
                                     </div>
                                 </div>
                             </div>
@@ -231,19 +278,51 @@ const Login: React.FC = () => {
                             {/* Optional Fields Row */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Photo URL</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Image className="h-5 w-5 text-slate-500" />
+                                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Profile Photo</label>
+
+                                    {!photo ? (
+                                        /* Empty State: Custom Upload Zone */
+                                        <label className="flex flex-col items-center justify-center w-full h-[122px] border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-900 hover:border-indigo-500 transition-all group overflow-hidden">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <UploadCloud className="w-7 h-7 mb-2 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                                                <p className="text-xs text-slate-400 group-hover:text-slate-300">
+                                                    <span className="font-semibold text-indigo-400">Click to upload</span>
+                                                </p>
+                                                <p className="text-[10px] text-slate-500 mt-1">JPG, PNG, WEBP</p>
+                                            </div>
+                                            <input
+                                                type="file"
+                                                className="hidden" // Completely hides the ugly default HTML input
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        setPhoto(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    ) : (
+                                        /* Filled State: Image Preview & File Info */
+                                        <div className="relative flex items-center gap-3 p-3 h-[122px] border border-slate-700 rounded-xl bg-slate-950/50">
+                                            <img
+                                                src={URL.createObjectURL(photo)}
+                                                alt="Profile Preview"
+                                                className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow-lg shadow-indigo-500/20"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-white truncate">{photo.name}</p>
+                                                <p className="text-xs text-slate-400">{(photo.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPhoto(null)}
+                                                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
+                                                title="Remove photo"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
                                         </div>
-                                        <input
-                                            type="url"
-                                            value={photoUrl}
-                                            onChange={(e) => setPhotoUrl(e.target.value)}
-                                            className="block w-full pl-10 pr-3 py-2.5 border border-slate-700 rounded-xl bg-slate-950/50 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                                            placeholder="https://example.com/avatar.jpg"
-                                        />
-                                    </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Skills (comma separated)</label>
@@ -277,8 +356,8 @@ const Login: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className={`block w-full pl-10 pr-3 py-2.5 border rounded-xl bg-slate-950/50 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all sm:text-sm ${email.length > 0 && !isEmailValid
-                                        ? "border-rose-500 focus:ring-rose-500"
-                                        : "border-slate-700 focus:ring-indigo-500"
+                                    ? "border-rose-500 focus:ring-rose-500"
+                                    : "border-slate-700 focus:ring-indigo-500"
                                     }`}
                                 placeholder="you@example.com"
                             />
@@ -310,8 +389,8 @@ const Login: React.FC = () => {
                                     }
                                 }}
                                 className={`block w-full pl-10 pr-10 py-2.5 border rounded-xl bg-slate-950/50 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all sm:text-sm ${passwordError
-                                        ? "border-rose-500 focus:ring-rose-500"
-                                        : "border-slate-700 focus:ring-indigo-500"
+                                    ? "border-rose-500 focus:ring-rose-500"
+                                    : "border-slate-700 focus:ring-indigo-500"
                                     }`}
                                 placeholder="••••••••"
                             />
@@ -370,6 +449,7 @@ const Login: React.FC = () => {
                             onClick={() => {
                                 setIsLogin(!isLogin);
                                 setPasswordError('');
+                                setApiError('');
                             }}
                             className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors focus:outline-none underline-offset-4 hover:underline"
                         >

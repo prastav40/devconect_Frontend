@@ -7,6 +7,7 @@ interface User {
   email: string;
   photoUrl: string;
 }
+
 const initialState = null as User | null;
 
 const userSlice = createSlice({

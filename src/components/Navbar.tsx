@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router';
 import {  Bell, User, LogOut, Menu, X } from 'lucide-react';
+import {useSelector } from 'react-redux';
+import {type RootState } from '../utils/store';
 
 export const Navbar: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<Boolean>(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<Boolean>(false);
 
+    const navbardata=useSelector((store: RootState) => store.user);
+
+    console.log(navbardata?.photoUrl)
     return (
         <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -56,8 +61,9 @@ export const Navbar: React.FC = () => {
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 focus:outline-none"
                             >
+                                Hello<div>{navbardata?.firstName}</div>
                                 <img
-                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                                    src={navbardata?.photoUrl}
                                     alt="Profile"
                                     className="w-8 h-8 rounded-full border border-slate-700 object-cover hover:border-indigo-500 transition-colors"
                                 />
