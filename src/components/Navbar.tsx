@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router';
-import {  Bell, User, LogOut, Menu, X } from 'lucide-react';
-import {useSelector } from 'react-redux';
-import {type RootState } from '../utils/store';
+import { Bell, User, LogOut, Menu, X } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { type RootState } from '../utils/store';
+import { useNavigate } from 'react-router';
+import axios from 'axios';
+import { removeUser } from '../utils/userslice';
+
 
 export const Navbar: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<Boolean>(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<Boolean>(false);
 
-    const navbardata=useSelector((store: RootState) => store.user);
+    const navbardata = useSelector((store: RootState) => store.user);
 
-    console.log(navbardata?.photoUrl)
+   const dispatch=useDispatch()
+    const navigate = useNavigate();
+
     return (
         <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,11 +67,11 @@ export const Navbar: React.FC = () => {
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 focus:outline-none"
                             >
-                                Hello<div>{navbardata?.firstName}</div>
+                                Hello<div>{navbardata?navbardata.firstName:<div>User</div>}</div>
                                 <img
-                                    src={navbardata?.photoUrl}
+                                    src={navbardata?.photoUrl || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
                                     alt="Profile"
-                                    className="w-8 h-8 rounded-full border border-slate-700 object-cover hover:border-indigo-500 transition-colors"
+                                    className="cursor-pointer w-10 h-10 rounded-full border border-slate-700 object-cover hover:border-indigo-500 transition-colors"
                                 />
                             </button>
 
@@ -82,9 +88,26 @@ export const Navbar: React.FC = () => {
                                     </Link>
                                     <button
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
-                                        onClick={() => {
+                                        onClick={async () => {
                                             setIsDropdownOpen(false);
-                                            // Add logout logic here
+
+                                            try {
+                                                // 1. Call the backend to destroy the JWT cookie
+                                                await axios.post(
+                                                    "http://localhost:3000/logout",
+                                                    {}, // The body is empty
+                                                    { withCredentials: true } // The config is the 3rd argument
+                                                );
+
+                                                // 2. Wipe the user from React's memory
+                                                dispatch(removeUser()); // Assumes you imported removeUser from your userslice
+
+                                                // 3. Send them to the login page
+                                                navigate("/login");
+
+                                            } catch (error) {
+                                                console.error("Logout failed:", error);
+                                            }
                                         }}
                                     >
                                         <LogOut size={16} />
