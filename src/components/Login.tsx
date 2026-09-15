@@ -1,25 +1,32 @@
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Calendar, Users, Code, ChevronDown, AlertCircle, UploadCloud, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Calendar, Users, Code, ChevronDown, AlertCircle, UploadCloud, X, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { addUser } from '../utils/userslice';
+import { type RootState } from '../utils/store'; 
+import imageCompression from 'browser-image-compression';
 
 const Login: React.FC = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    const user = useSelector((store: RootState) => store.user);
+    useEffect(() => {
+        if (user) {
+            navigate("/");
+        }
+    }, [user, navigate]);
+
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false); 
 
-    // State to catch and display backend errors (e.g., Wrong password)
     const [apiError, setApiError] = useState<string>('');
 
-    // Core Form states
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
 
-    // Signup specific states matching the Mongoose Schema
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');
     const [age, setAge] = useState<string>('');
@@ -30,24 +37,24 @@ const Login: React.FC = () => {
 
     const [passwordError, setPasswordError] = useState<string>('');
 
-    // Real-time password validation checks
     const hasLength = password.length >= 8;
     const hasUpper = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSpecial = /[!@#$%^&*()_+]/.test(password);
     const isPasswordValid = hasLength && hasUpper && hasNumber && hasSpecial;
 
-    // Real-time validation checks
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setApiError(''); // Clear any previous errors on new submission
+        setApiError('');
 
         if (!isEmailValid) {
             alert("Please enter a valid email address.");
             return;
         }
+
+        setIsLoading(true);
 
         try {
             if (!isLogin) {
@@ -62,7 +69,6 @@ const Login: React.FC = () => {
                     return;
                 }
 
-                // Process skills into unique array with max 10 limit
                 const skillsArray = skillsString
                     .split(',')
                     .map(skill => skill.trim())
@@ -73,7 +79,6 @@ const Login: React.FC = () => {
                     return;
                 }
 
-                // Build FormData for file upload
                 const formData = new FormData();
                 formData.append("email", email);
                 formData.append("password", password);
@@ -87,7 +92,6 @@ const Login: React.FC = () => {
                     formData.append("photo", photo);
                 }
 
-                // 1. Make the Signup API Call with FormData headers
                 const response = await axios.post(
                     "http://localhost:3000/signup",
                     formData,
@@ -97,29 +101,25 @@ const Login: React.FC = () => {
                     }
                 );
 
-                // 2. Dispatch user data to Redux
                 dispatch(addUser(response.data));
 
-                // 3. Redirect to main app
                 navigate("/");
 
             } else {
-                // 1. Make the Login API Call
                 const response = await axios.post(
                     "http://localhost:3000/login",
                     { email, password },
                     { withCredentials: true }
                 );
-                // 2. Dispatch user data to Redux
                 dispatch(addUser(response?.data));
 
-                // 3. Redirect to main app
                 navigate("/");
             }
         } catch (error: any) {
-            // Safely catch backend error messages (e.g., 401 Unauthorized, 400 Bad Request)
             const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
             setApiError(errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -294,9 +294,28 @@ const Login: React.FC = () => {
                                                 type="file"
                                                 className="hidden" // Completely hides the ugly default HTML input
                                                 accept="image/*"
-                                                onChange={(e) => {
+                                                onChange={async (e) => {
                                                     if (e.target.files && e.target.files[0]) {
-                                                        setPhoto(e.target.files[0]);
+                                                        const imageFile = e.target.files[0];
+
+                                                        // Compression Settings
+                                                        const options = {
+                                                            maxSizeMB: 0.2, 
+                                                            maxWidthOrHeight: 800,
+                                                            useWebWorker: true 
+                                                        };
+
+                                                        try {
+                                                            const compressedFile = await imageCompression(imageFile, options);
+
+                                                            console.log(`Original: ${(imageFile.size / 1024 / 1024).toFixed(2)} MB`);
+                                                            console.log(`Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+
+                                                            setPhoto(compressedFile);
+                                                        } catch (error) {
+                                                            console.error("Error compressing image:", error);
+                                                            alert("Could not process the image. Please try another one.");
+                                                        }
                                                     }
                                                 }}
                                             />
@@ -435,10 +454,20 @@ const Login: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all active:scale-[0.98]"
+                        disabled={isLoading}
+                        className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isLogin ? 'Sign In' : 'Create Account'}
-                        <ArrowRight className="h-4 w-4" />
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                {isLogin ? 'Signing In...' : 'Setting up profile...'}
+                            </>
+                        ) : (
+                            <>
+                                {isLogin ? 'Sign In' : 'Create Account'}
+                                <ArrowRight className="h-4 w-4" />
+                            </>
+                        )}
                     </button>
                 </form>
 
