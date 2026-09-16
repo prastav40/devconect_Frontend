@@ -5,7 +5,7 @@ import App from './App'
 import { createBrowserRouter, RouterProvider } from "react-router";
 import Body from './components/Body';
 import About from './components/About';
-import Login from './components/Login';
+import Login from './components/Login_Signup';
 import Error from './components/Error';
 import { Provider } from 'react-redux';
 import {store} from "./utils/store"

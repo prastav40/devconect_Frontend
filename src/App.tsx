@@ -35,7 +35,7 @@ const App = () => {
         };
 
         fetchUserProfile();
-    }, [dispatch, navigate]);
+    }, [dispatch]);
 
 
   return (

@@ -14,7 +14,7 @@ export const Navbar: React.FC = () => {
 
     const navbardata = useSelector((store: RootState) => store.user);
 
-   const dispatch=useDispatch()
+    const dispatch = useDispatch()
     const navigate = useNavigate();
 
     return (
@@ -67,7 +67,7 @@ export const Navbar: React.FC = () => {
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 focus:outline-none"
                             >
-                                Hello<div>{navbardata?navbardata.firstName:<div>User</div>}</div>
+                                Hello<div>{navbardata ? navbardata.firstName : <div>User</div>}</div>
                                 <img
                                     src={navbardata?.photoUrl || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
                                     alt="Profile"
@@ -158,13 +158,35 @@ export const Navbar: React.FC = () => {
                         </Link>
                         <button
                             className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-rose-400 hover:bg-slate-800"
-                            onClick={() => setIsMobileMenuOpen(false)}
+                            onClick={async () => {
+                                            setIsDropdownOpen(false);
+
+                                            try {
+                                                // 1. Call the backend to destroy the JWT cookie
+                                                await axios.post(
+                                                    "http://localhost:3000/logout",
+                                                    {}, // The body is empty
+                                                    { withCredentials: true } // The config is the 3rd argument
+                                                );
+
+                                                // 2. Wipe the user from React's memory
+                                                dispatch(removeUser()); // Assumes you imported removeUser from your userslice
+
+                                                // 3. Send them to the login page
+                                                navigate("/login");
+
+                                            } catch (error) {
+                                                console.error("Logout failed:", error);
+                                            }
+                                        }}
+                                   
                         >
-                            Logout
-                        </button>
-                    </div>
+                        Logout
+                    </button>
                 </div>
-            )}
-        </nav>
+                </div>
+    )
+}
+        </nav >
     );
 };
