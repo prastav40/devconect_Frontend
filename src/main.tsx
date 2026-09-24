@@ -3,12 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import { createBrowserRouter, RouterProvider } from "react-router";
-import Body from './components/Body';
 import About from './components/About';
 import Login from './components/Login_Signup';
 import Error from './components/Error';
 import { Provider } from 'react-redux';
 import {store} from "./utils/store"
+import Feed from './components/Feed';
 
 
 const approuter = createBrowserRouter([
@@ -18,7 +18,7 @@ const approuter = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Body />,
+        element: <Feed />,
       },
         {
         path: "/about",

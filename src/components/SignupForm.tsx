@@ -1,11 +1,11 @@
 // src/components/SignupForm.tsx
 import React, { useState } from 'react';
-import { User, Calendar, Users, Code, ChevronDown, UploadCloud, X, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Calendar, Users, Code, ChevronDown, UploadCloud, X, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { useAuth } from '../hooks/useAuth';
 
 const SignupForm: React.FC = () => {
-    const { authenticate, isLoading } = useAuth();
+    const { authenticate, isLoading, apiError } = useAuth();
 
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');
@@ -19,6 +19,7 @@ const SignupForm: React.FC = () => {
     const [password, setPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [passwordError, setPasswordError] = useState<string>('');
+    const [formValidationError, setFormValidationError] = useState<string | null>(null);
 
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const hasLength = password.length >= 8;
@@ -27,20 +28,34 @@ const SignupForm: React.FC = () => {
     const hasSpecial = /[!@#$%^&*()_+]/.test(password);
     const isPasswordValid = hasLength && hasUpper && hasNumber && hasSpecial;
 
+    // Use either the API error from the hook or local validation errors
+    const displayError = apiError || formValidationError;
+
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setFormValidationError(null);
 
-        if (!isEmailValid) return alert("Please enter a valid email address.");
-        if (!isPasswordValid) return alert("Please complete all password requirements.");
+        if (!isEmailValid) {
+            setFormValidationError("Please enter a valid email address.");
+            return;
+        }
+        if (!isPasswordValid) {
+            setFormValidationError("Please complete all password requirements.");
+            return;
+        }
 
         const parsedAge = parseInt(age);
         if (isNaN(parsedAge) || parsedAge < 18 || parsedAge > 65) {
-            return alert("Age must be between 18 and 65.");
+            setFormValidationError("Age must be between 18 and 65.");
+            return;
         }
 
         const skillsArray = skillsString.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
         const uniqueSkills = [...new Set(skillsArray)];
-        if (uniqueSkills.length > 10) return alert("You can only add up to 10 skills.");
+        if (uniqueSkills.length > 10) {
+            setFormValidationError("You can only add up to 10 skills.");
+            return;
+        }
 
         // Build the physical FormData envelope for Multer
         const formData = new FormData();
@@ -59,6 +74,15 @@ const SignupForm: React.FC = () => {
 
     return (
         <form className="mt-4 space-y-5" onSubmit={handleSubmit}>
+
+            {/* Error Message Banner */}
+            {displayError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2.5 animate-fadeIn">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <span>{displayError}</span>
+                </div>
+            )}
+
             {/* Name Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -153,7 +177,7 @@ const SignupForm: React.FC = () => {
                                             setPhoto(compressedFile);
                                         } catch (error) {
                                             console.error("Error compressing image:", error);
-                                            alert("Could not process the image. Please try another one.");
+                                            setFormValidationError("Could not process the image. Please try another one.");
                                         }
                                     }
                                 }}

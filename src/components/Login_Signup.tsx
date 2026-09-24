@@ -13,7 +13,7 @@ const Login: React.FC = () => {
         if (user) {
             navigate("/");
         }
-    }, [user, navigate]);
+    }, [user]);
 
     const [isLogin, setIsLogin] = useState<boolean>(true);
 

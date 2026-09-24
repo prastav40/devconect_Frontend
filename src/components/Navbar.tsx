@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
     const navigate = useNavigate();
 
     return (
-        <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+        <nav className="z-[999] bg-slate-950 fixed top-0 w-full backdrop-blur-md border-b border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
 

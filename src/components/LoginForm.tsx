@@ -1,10 +1,10 @@
 // src/components/LoginForm.tsx
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const LoginForm: React.FC = () => {
-    const { authenticate, isLoading } = useAuth();
+    const { authenticate, isLoading, apiError } = useAuth();
 
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -12,13 +12,20 @@ const LoginForm: React.FC = () => {
 
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
         await authenticate(true, { email, password });
     };
 
     return (
         <form className="mt-4 space-y-5" onSubmit={handleSubmit}>
             
+            {/* API Error Message  */}
+            {apiError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2.5 animate-fadeIn">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <span>{apiError}</span>
+                </div>
+            )}
+
             {/* Email Field */}
             <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address *</label>
