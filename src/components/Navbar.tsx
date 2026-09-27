@@ -1,68 +1,118 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { Bell, User, LogOut, Menu, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { type RootState } from '../utils/store';
-import { useNavigate } from 'react-router';
 import axios from 'axios';
 import { removeUser } from '../utils/userslice';
-
+import { motion } from 'framer-motion';
 
 export const Navbar: React.FC = () => {
-    const [isDropdownOpen, setIsDropdownOpen] = useState<Boolean>(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<Boolean>(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+    const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+    
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const navbardata = useSelector((store: RootState) => store.user);
-
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    // Navigation items array for the sliding hover effect
+    const navItems = [
+        { name: 'Requests', path: '/requests', badge: 2 },
+        { name: 'Connections', path: '/connections' }
+    ];
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     return (
-        <nav className="z-[999] bg-slate-950 fixed top-0 w-full backdrop-blur-md border-b border-slate-800">
+        <nav className="z-999 bg-slate-950 fixed top-0 w-full backdrop-blur-md border-b border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
 
                     {/* Left: Brand Logo */}
                     <div className="flex items-center gap-2">
                         <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-                            {/* Your Custom Logo Image */}
                             <img
                                 src="/Tab_Logo.svg"
                                 alt="DevTinder Logo"
                                 className="w-9 h-9 object-contain"
                             />
-
-                            {/* Brand Text */}
                             <span className="text-xl font-bold tracking-tight text-white">
                                 dev<span className="text-indigo-400">conect</span>
                             </span>
                         </Link>
                     </div>
 
-                    {/* Right: Navigation Links & User Actions Grouped Together */}
+                    {/* Right: Navigation Links & User Actions */}
                     <div className="hidden md:flex items-center gap-6">
 
-                        {/* Nav Links */}
-                        <Link to="/requests" className="text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1.5">
-                            Requests
-                            <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                2
-                            </span>
-                        </Link>
-                        <Link to="/connections" className="text-slate-300 hover:text-white transition-colors font-medium">
-                            Connections
-                        </Link>
+                        {/* Animated Sliding Nav Links */}
+                        <div 
+                            className="flex items-center gap-2 relative"
+                            onMouseLeave={() => setHoveredNav(null)}
+                        >
+                            {navItems.map((item) => (
+                                <Link
+                                    key={item.name}
+                                    to={item.path}
+                                    onMouseEnter={() => setHoveredNav(item.name)}
+                                    className={`relative px-4 py-2 rounded-full font-medium transition-colors duration-300 flex items-center gap-1.5 ${
+                                        hoveredNav === item.name ? 'text-black' : 'text-slate-300'
+                                    }`}
+                                >
+                                    <span className="relative z-10 flex items-center gap-1.5">
+                                        {item.name}
+                                        {item.badge && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors duration-300 ${
+                                                hoveredNav === item.name ? 'bg-slate-900 text-white' : 'bg-rose-500 text-white'
+                                            }`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </span>
+                                    
+                                    {/* The sliding white background pill */}
+                                    {hoveredNav === item.name && (
+                                        <motion.div
+                                            layoutId="nav-hover-pill"
+                                            className="absolute inset-0 bg-white rounded-full"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                                        />
+                                    )}
+                                </Link>
+                            ))}
+                        </div>
 
                         {/* Vertical Divider */}
                         <div className="h-6 w-px bg-slate-800"></div>
 
-                        {/* Notifications */}
-                        <button className="text-slate-400 hover:text-white transition-colors focus:outline-none">
+                        {/* Animated Notification Bell */}
+                        <motion.button 
+                            whileHover={{ scale: 1.1, rotate: 10 }} 
+                            whileTap={{ scale: 0.9 }}
+                            className="text-slate-400 hover:text-white transition-colors focus:outline-none"
+                        >
                             <Bell size={20} />
-                        </button>
+                        </motion.button>
 
                         {/* Profile Dropdown */}
-                        <div className="relative">
+                        <div className="relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 focus:outline-none"
@@ -79,7 +129,7 @@ export const Navbar: React.FC = () => {
                             {isDropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1 overflow-hidden">
                                     <Link
-                                        to="/profile"
+                                        to="/profileedit"
                                         className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
                                         onClick={() => setIsDropdownOpen(false)}
                                     >
@@ -90,21 +140,14 @@ export const Navbar: React.FC = () => {
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
                                         onClick={async () => {
                                             setIsDropdownOpen(false);
-
                                             try {
-                                                // 1. Call the backend to destroy the JWT cookie
                                                 await axios.post(
                                                     "http://localhost:3000/logout",
-                                                    {}, // The body is empty
-                                                    { withCredentials: true } // The config is the 3rd argument
+                                                    {}, 
+                                                    { withCredentials: true } 
                                                 );
-
-                                                // 2. Wipe the user from React's memory
-                                                dispatch(removeUser()); // Assumes you imported removeUser from your userslice
-
-                                                // 3. Send them to the login page
+                                                dispatch(removeUser()); 
                                                 navigate("/login");
-
                                             } catch (error) {
                                                 console.error("Logout failed:", error);
                                             }
@@ -150,7 +193,7 @@ export const Navbar: React.FC = () => {
                             Connections
                         </Link>
                         <Link
-                            to="/profile"
+                            to="/profileedit"
                             className="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-800"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
@@ -159,34 +202,25 @@ export const Navbar: React.FC = () => {
                         <button
                             className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-rose-400 hover:bg-slate-800"
                             onClick={async () => {
-                                            setIsDropdownOpen(false);
-
-                                            try {
-                                                // 1. Call the backend to destroy the JWT cookie
-                                                await axios.post(
-                                                    "http://localhost:3000/logout",
-                                                    {}, // The body is empty
-                                                    { withCredentials: true } // The config is the 3rd argument
-                                                );
-
-                                                // 2. Wipe the user from React's memory
-                                                dispatch(removeUser()); // Assumes you imported removeUser from your userslice
-
-                                                // 3. Send them to the login page
-                                                navigate("/login");
-
-                                            } catch (error) {
-                                                console.error("Logout failed:", error);
-                                            }
-                                        }}
-                                   
+                                setIsMobileMenuOpen(false);
+                                try {
+                                    await axios.post(
+                                        "http://localhost:3000/logout",
+                                        {},
+                                        { withCredentials: true } 
+                                    );
+                                    dispatch(removeUser()); 
+                                    navigate("/login");
+                                } catch (error) {
+                                    console.error("Logout failed:", error);
+                                }
+                            }}
                         >
-                        Logout
-                    </button>
+                            Logout
+                        </button>
+                    </div>
                 </div>
-                </div>
-    )
-}
-        </nav >
+            )}
+        </nav>
     );
 };

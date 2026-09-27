@@ -9,6 +9,7 @@ import Error from './components/Error';
 import { Provider } from 'react-redux';
 import {store} from "./utils/store"
 import Feed from './components/Feed';
+import ProfileEdit from './components/Profile_edit';
 
 
 const approuter = createBrowserRouter([
@@ -28,6 +29,10 @@ const approuter = createBrowserRouter([
         path: "/login",
         element: <Login />,
       },
+      {
+        path:"/profileedit",
+        element:<ProfileEdit />
+      }
     ],
     errorElement:<Error />
   }

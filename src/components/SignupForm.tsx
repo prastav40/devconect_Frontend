@@ -163,7 +163,7 @@ const SignupForm: React.FC = () => {
                 <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">Profile Photo</label>
                     {!photo ? (
-                        <label className="flex flex-col items-center justify-center w-full h-[122px] border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-900 hover:border-indigo-500 transition-all group overflow-hidden">
+                        <label className="flex flex-col items-center justify-center w-full h-30.5 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-900 hover:border-indigo-500 transition-all group overflow-hidden">
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 <UploadCloud className="w-7 h-7 mb-2 text-slate-500 group-hover:text-indigo-400 transition-colors" />
                                 <p className="text-xs text-slate-400 group-hover:text-slate-300"><span className="font-semibold text-indigo-400">Click to upload</span></p>
@@ -184,7 +184,7 @@ const SignupForm: React.FC = () => {
                             />
                         </label>
                     ) : (
-                        <div className="relative flex items-center gap-3 p-3 h-[122px] border border-slate-700 rounded-xl bg-slate-950/50">
+                        <div className="relative flex items-center gap-3 p-3 h-20.5 border border-slate-700 rounded-xl bg-slate-950/50">
                             <img src={URL.createObjectURL(photo)} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow-lg shadow-indigo-500/20" />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-white truncate">{photo.name}</p>
@@ -271,7 +271,7 @@ const SignupForm: React.FC = () => {
 
             {/* Submit Button */}
             <button type="submit" disabled={isLoading}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-linear-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
                 {isLoading ? (
                     <>
