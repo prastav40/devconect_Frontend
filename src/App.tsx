@@ -13,7 +13,7 @@ const App = () => {
         const fetchUserProfile = async () => {
             try {
                 // Ask the backend to verify the cookie and return the user profile
-                const response = await axios.get("http://localhost:3000/profile", {
+                const response = await axios.get(import.meta.env.VITE_API_URL, {
                     withCredentials: true
                 });
                 

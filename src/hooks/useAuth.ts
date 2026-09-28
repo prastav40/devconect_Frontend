@@ -10,6 +10,8 @@ export interface LoginData {
     password: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export const useAuth = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -22,7 +24,7 @@ export const useAuth = () => {
         setApiError('');
 
         try {
-            const endpoint = isLogin ? "http://localhost:3000/login" : "http://localhost:3000/signup";
+            const endpoint = isLogin ? "http://localhost:3000/login" :"http://localhost:3000/signup";
             const response = await axios.post(endpoint, data, { withCredentials: true });
 
             dispatch(addUser(response.data));

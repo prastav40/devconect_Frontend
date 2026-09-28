@@ -10,7 +10,8 @@ import { Provider } from 'react-redux';
 import {store} from "./utils/store"
 import Feed from './components/Feed';
 import ProfileEdit from './components/Profile_edit';
-
+import ConnectionRequests from './components/Connectionrequest';
+import Connections from './components/Connections';
 
 const approuter = createBrowserRouter([
   {
@@ -32,6 +33,14 @@ const approuter = createBrowserRouter([
       {
         path:"/profileedit",
         element:<ProfileEdit />
+      },
+      {
+        path:"/connectionrequests",
+        element:<ConnectionRequests />
+      },
+      {
+        path:"/connections",
+        element:<Connections />
       }
     ],
     errorElement:<Error />
